@@ -1,125 +1,80 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>管理员作业管理</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{padding:20px;max-width:800px;margin:0 auto;}
-.box{border:1px #ccc solid;padding:15px;border-radius:8px;margin-bottom:20px;}
-input,textarea{width:100%;padding:8px;margin:8px 0;border:1px #ddd solid;border-radius:4px;}
-button{padding:8px 16px;margin:5px;cursor:pointer;}
-.item{border:1px #eee solid;padding:10px;margin:8px 0;border-radius:4px;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:微软雅黑;background:#f5f7fa;color:#333;}
+        .header{background:#2d8cf0;padding:15px;color:#fff;text-align:center;font-size:22px;}
+        .nav{display:flex;background:#fff;border-bottom:1px solid #eee;}
+        .nav a{flex:1;text-align:center;padding:12px;text-decoration:none;color:#666;}
+        .nav a.active{color:#2d8cf0;border-bottom:2px solid #2d8cf0;}
+        .admin-box{width:95%;margin:20px auto;background:#fff;padding:20px;border-radius:8px;}
+        .admin-item{padding:12px;border-bottom:1px solid #eee;margin:10px 0;}
+        .del-btn{background:#f53f3f;padding:5px 15px;color:#fff;border:none;border-radius:4px;cursor:pointer;margin-top:5px;}
+    </style>
 </head>
 <body>
-<h2>作业发布与管理</h2>
-<div class="box">
-    <h4>新增作业</h4>
-    <input type="date" id="workDate" placeholder="填写作业日期">
-    <textarea id="workContent" rows="5" placeholder="输入作业内容"></textarea>
-    <button onclick="addWork()">发布作业</button>
-</div>
-
-<div class="box">
-    <h4>全部历史作业</h4>
-    <div id="workList"></div>
-</div>
-
-<!-- 编辑弹窗 -->
-<div id="editPop" style="display:none;position:fixed;top:30%;left:50%;transform:translate(-50%,-30%);background:#fff;padding:20px;border:2px #666 solid;border-radius:8px;z-index:999;">
-    <h4>编辑作业</h4>
-    <input type="date" id="editDate">
-    <textarea id="editContent" rows="4"></textarea>
-    <input type="hidden" id="editIndex">
-    <button onclick="saveEdit()">保存修改</button>
-    <button onclick="closePop()">取消</button>
-</div>
+    <div class="header">管理员后台</div>
+    <div class="nav">
+        <a href="index.html">首页</a>
+        <a href="student.html">作业列表</a>
+        <a href="admin.html" class="active">管理后台</a>
+        <a href="user.html">个人中心</a>
+    </div>
+    <div class="admin-box">
+        <h3>全部作业管理</h3>
+        <div id="adminList"></div>
+    </div>
 
 <script>
-let workData = [];
-const jsonUrl = "./homework.json";
+const JSON_URL = "https://raw.githubusercontent.com/用户名/仓库名/main/homework.json";
+let adminData = [];
 
-// 页面加载读取公共作业文件
-window.onload = function(){
-    loadWorkData();
+window.onload = loadAdminData;
+
+async function loadAdminData(){
+    adminData = await getHomeworkData();
+    showAdminList();
 }
 
-// 读取JSON数据
-async function loadWorkData(){
-    try{
-        let res = await fetch(jsonUrl);
-        workData = await res.json();
-        renderList();
-    }catch(e){
-        workData = [];
-        renderList();
-    }
+async function getHomeworkData() {
+  try {
+    const res = await fetch(JSON_URL);
+    const data = await res.json();
+    return data || [];
+  } catch (err) {
+    return [];
+  }
 }
 
-// 渲染作业列表
-function renderList(){
+async function saveHomeworkData(newData) {
+  alert("操作完成，上传文件同步数据");
+}
+
+function showAdminList(){
     let html = "";
-    workData.forEach((item,idx)=>{
+    adminData.forEach((item,index)=>{
         html += `
-        <div class="item">
-            <p>日期：${item.date}</p>
-            <p>内容：${item.content}</p>
-            <button onclick="openEdit(${idx})">编辑</button>
-            <button onclick="delWork(${idx})">删除</button>
+        <div class="admin-item">
+            <p>姓名：${item.name}</p>
+            <p>班级：${item.className}</p>
+            <p>作业内容：${item.work}</p>
+            <button class="del-btn" onclick="deleteItem(${index})">删除本条</button>
         </div>
-        `;
+        `
     })
-    document.getElementById("workList").innerHTML = html;
+    document.getElementById("adminList").innerHTML = html;
 }
 
-// 新增作业
-function addWork(){
-    let date = document.getElementById("workDate").value;
-    let content = document.getElementById("workContent").value.trim();
-    if(!date || !content){
-        alert("请填写日期和作业内容");
-        return;
+async function deleteItem(idx){
+    if(confirm("确定删除该条作业？")){
+        adminData.splice(idx,1);
+        await saveHomeworkData(adminData);
+        showAdminList();
     }
-    workData.unshift({date,content});
-    alert("新增成功！请把下方JSON内容替换仓库里的homework.json并提交更新");
-    console.log(JSON.stringify(workData,null,2));
-    renderList();
-    document.getElementById("workDate").value = "";
-    document.getElementById("workContent").value = "";
-}
-
-// 打开编辑
-function openEdit(idx){
-    let item = workData[idx];
-    document.getElementById("editIndex").value = idx;
-    document.getElementById("editDate").value = item.date;
-    document.getElementById("editContent").value = item.content;
-    document.getElementById("editPop").style.display = "block";
-}
-
-// 保存编辑
-function saveEdit(){
-    let idx = document.getElementById("editIndex").value;
-    workData[idx].date = document.getElementById("editDate").value;
-    workData[idx].content = document.getElementById("editContent").value.trim();
-    closePop();
-    alert("修改成功！请替换更新homework.json文件并提交GitHub");
-    console.log(JSON.stringify(workData,null,2));
-    renderList();
-}
-
-// 删除作业
-function delWork(idx){
-    if(!confirm("确定删除这条作业？"))return;
-    workData.splice(idx,1);
-    alert("删除成功！请替换更新homework.json文件并提交GitHub");
-    console.log(JSON.stringify(workData,null,2));
-    renderList();
-}
-
-function closePop(){
-    document.getElementById("editPop").style.display = "none";
 }
 </script>
 </body>

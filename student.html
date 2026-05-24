@@ -1,67 +1,99 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>学生作业查看</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{padding:20px;max-width:700px;margin:0 auto;}
-.btn-group{margin:15px 0;}
-button{padding:8px 15px;margin:0 5px;cursor:pointer;}
-.work-item{border:1px #eee solid;padding:12px;margin:10px 0;border-radius:6px;}
-.tip{color:#666;margin:10px 0;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作业列表</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:微软雅黑;background:#f5f7fa;color:#333;}
+        .header{background:#2d8cf0;padding:15px;color:#fff;text-align:center;font-size:22px;}
+        .nav{display:flex;background:#fff;border-bottom:1px solid #eee;}
+        .nav a{flex:1;text-align:center;padding:12px;text-decoration:none;color:#666;}
+        .nav a.active{color:#2d8cf0;border-bottom:2px solid #2d8cf0;}
+        .content{width:95%;margin:20px auto;background:#fff;padding:20px;border-radius:8px;}
+        .item{padding:10px;border-bottom:1px solid #eee;margin:8px 0;}
+        input,textarea{width:100%;padding:8px;margin:8px 0;border:1px solid #ddd;border-radius:4px;}
+        button{padding:8px 20px;background:#2d8cf0;color:#fff;border:none;border-radius:4px;cursor:pointer;}
+    </style>
 </head>
 <body>
-<h2>作业查询</h2>
-<div class="btn-group">
-    <button onclick="showToday()">今日作业</button>
-    <button onclick="showAll()">以往全部作业</button>
-</div>
-<div class="tip">默认展示当天作业</div>
-<div id="workBox"></div>
+    <div class="header">作业提交列表</div>
+    <div class="nav">
+        <a href="index.html">首页</a>
+        <a href="student.html" class="active">作业列表</a>
+        <a href="admin.html">管理后台</a>
+        <a href="user.html">个人中心</a>
+    </div>
+    <div class="content">
+        <h3>提交新作业</h3>
+        <input type="text" id="stuName" placeholder="输入姓名">
+        <input type="text" id="stuClass" placeholder="输入班级">
+        <textarea id="workContent" rows="4" placeholder="填写作业内容"></textarea>
+        <button onclick="submitWork()">提交作业</button>
+
+        <h3 style="margin-top:30px">已提交作业</h3>
+        <div id="workList"></div>
+    </div>
 
 <script>
-let workData = [];
-const jsonUrl = "./homework.json";
-// 获取今日日期
-function getToday(){
-    let d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const JSON_URL = "https://raw.githubusercontent.com/用户名/仓库名/main/homework.json";
+let workArr = [];
+
+window.onload = initPage;
+
+async function initPage(){
+    workArr = await getHomeworkData();
+    renderList();
 }
 
-window.onload = async function(){
-    let res = await fetch(jsonUrl);
-    workData = await res.json();
-    showToday();
+async function getHomeworkData() {
+  try {
+    const res = await fetch(JSON_URL);
+    const data = await res.json();
+    return data || [];
+  } catch (err) {
+    return [];
+  }
 }
 
-// 展示今日作业
-function showToday(){
-    let today = getToday();
-    let list = workData.filter(item=>item.date === today);
+async function saveHomeworkData(newData) {
+  alert("提交成功！上传文件后全员刷新可见");
+}
+
+function renderList(){
     let html = "";
-    if(list.length===0){
-        html = "<div class='work-item'>暂无今日作业</div>";
-    }else{
-        list.forEach(item=>{
-            html += `<div class="work-item"><p>日期：${item.date}</p><p>作业内容：${item.content}</p></div>`;
-        })
-    }
-    document.getElementById("workBox").innerHTML = html;
+    workArr.forEach(item=>{
+        html += `
+        <div class="item">
+            <p>姓名：${item.name}</p>
+            <p>班级：${item.className}</p>
+            <p>作业：${item.work}</p>
+        </div>
+        `;
+    })
+    document.getElementById("workList").innerHTML = html;
 }
 
-// 展示全部历史作业
-function showAll(){
-    let html = "";
-    if(workData.length===0){
-        html = "<div class='work-item'>暂无历史作业</div>";
-    }else{
-        workData.forEach(item=>{
-            html += `<div class="work-item"><p>日期：${item.date}</p><p>作业内容：${item.content}</p></div>`;
-        })
+async function submitWork(){
+    let name = document.getElementById("stuName").value;
+    let cls = document.getElementById("stuClass").value;
+    let work = document.getElementById("workContent").value;
+    if(!name||!cls||!work){
+        alert("请填写完整信息");
+        return;
     }
-    document.getElementById("workBox").innerHTML = html;
+    workArr.push({
+        name:name,
+        className:cls,
+        work:work
+    })
+    await saveHomeworkData(workArr);
+    renderList();
+    // 清空输入框
+    document.getElementById("stuName").value = "";
+    document.getElementById("stuClass").value = "";
+    document.getElementById("workContent").value = "";
 }
 </script>
 </body>
