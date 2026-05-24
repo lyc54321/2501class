@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作业编辑管理</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:"微软雅黑";}
+        body{background:#f7f9fc;padding:30px;}
+        .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px;}
+        h1{color:#2d3748;font-size:24px;}
+        .logout{padding:8px 16px;background:#e53e3e;color:#fff;border-radius:5px;text-decoration:none;}
+        .user-btn{padding:8px 16px;background:#3182ce;color:#fff;border-radius:5px;text-decoration:none;margin-right:10px;}
+        .edit-area{background:#fff;padding:25px;border-radius:10px;box-shadow:0 2px 10px #eee;margin-bottom:30px;}
+        .input-line{margin:15px 0;}
+        label{display:block;margin-bottom:6px;color:#444;}
+        input,textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;font-size:15px;}
+        textarea{height:120px;resize:none;}
+        .btn-group{margin-top:20px;}
+        button{padding:10px 20px;margin-right:10px;border:none;border-radius:5px;cursor:pointer;font-size:15px;}
+        .add-btn{background:#38a169;color:#fff;}
+        .del-btn{background:#dd6b20;color:#fff;}
+        .list-box{background:#fff;padding:25px;border-radius:10px;box-shadow:0 2px 10px #eee;}
+        .work-item{border-bottom:1px solid #eee;padding:15px 0;}
+        .date-title{font-size:18px;font-weight:bold;color:#2c5282;margin-bottom:8px;}
+        .content{color:#555;line-height:1.6;margin-bottom:10px;}
+        .oper-btn{color:#0066cc;cursor:pointer;font-size:14px;margin-right:15px;}
+        .del-one{color:red;cursor:pointer;font-size:14px;}
+        .empty{text-align:center;color:#999;padding:40px 0;}
+        .edit-pop{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:none;justify-content:center;align-items:center;}
+        .edit-box{width:450px;background:#fff;padding:25px;border-radius:8px;}
+    </style>
+</head>
+<body>
+    <div class="head">
+        <h1>管理员-作业发布编辑</h1>
+        <div>
+            <a href="user.html" class="user-btn">个人中心</a>
+            <a href="index.html" class="logout">退出登录</a>
+        </div>
+    </div>
+
+    <!-- 发布作业 标题改为日期 -->
+    <div class="edit-area">
+        <div class="input-line">
+            <label>填写日期</label>
+            <input type="text" id="workDate" placeholder="格式示例：2026-5-24">
+        </div>
+        <div class="input-line">
+            <label>作业内容</label>
+            <textarea id="workContent" placeholder="填写具体作业要求"></textarea>
+        </div>
+        <div class="btn-group">
+            <button class="add-btn" onclick="addWork()">发布作业</button>
+            <button class="del-btn" onclick="clearAll()">清空全部作业</button>
+        </div>
+    </div>
+
+    <div class="list-box" id="adminWorkList"></div>
+
+    <!-- 编辑弹窗 -->
+    <div class="edit-pop" id="editPop">
+        <div class="edit-box">
+            <div class="input-line">
+                <label>修改日期</label>
+                <input type="text" id="editDate">
+            </div>
+            <div class="input-line">
+                <label>修改内容</label>
+                <textarea id="editContent"></textarea>
+            </div>
+            <div class="btn-group">
+                <button class="add-btn" onclick="saveEdit()">保存修改</button>
+                <button class="del-btn" onclick="closeEdit()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let loginId = localStorage.getItem('loginStuId');
+        if(loginId !== '21'){
+            alert('无管理员权限！');
+            location.href = 'index.html';
+        }
+
+        let nowEditIndex = 0;
+
+        function getWorkData(){
+            return JSON.parse(localStorage.getItem('workData')) || [];
+        }
+
+        function saveData(arr){
+            localStorage.setItem('workData',JSON.stringify(arr));
+        }
+
+        // 新增作业
+        function addWork(){
+            let date = document.getElementById('workDate').value.trim();
+            let content = document.getElementById('workContent').value.trim();
+            if(!date || !content){
+                alert('日期和内容不能为空！');
+                return;
+            }
+            let arr = getWorkData();
+            arr.push({date,content});
+            saveData(arr);
+            document.getElementById('workDate').value = '';
+            document.getElementById('workContent').value = '';
+            renderList();
+            alert('作业发布成功！');
+        }
+
+        // 渲染所有往期作业
+        function renderList(){
+            let arr = getWorkData();
+            let html = '';
+            if(arr.length === 0){
+                html = '<div class="empty">暂无已发布作业</div>';
+            }else{
+                arr.forEach((item,index)=>{
+                    html += `
+                    <div class="work-item">
+                        <div class="date-title">${item.date}</div>
+                        <div class="content">${item.content}</div>
+                        <span class="oper-btn" onclick="openEdit(${index})">编辑</span>
+                        <span class="del-one" onclick="delSingle(${index})">删除</span>
+                    </div>
+                    `;
+                })
+            }
+            document.getElementById('adminWorkList').innerHTML = html;
+        }
+
+        // 打开编辑弹窗
+        function openEdit(index){
+            nowEditIndex = index;
+            let arr = getWorkData();
+            document.getElementById('editDate').value = arr[index].date;
+            document.getElementById('editContent').value = arr[index].content;
+            document.getElementById('editPop').style.display = 'flex';
+        }
+
+        // 关闭编辑
+        function closeEdit(){
+            document.getElementById('editPop').style.display = 'none';
+        }
+
+        // 保存编辑修改
+        function saveEdit(){
+            let newDate = document.getElementById('editDate').value.trim();
+            let newCon = document.getElementById('editContent').value.trim();
+            if(!newDate || !newCon){
+                alert('日期内容不能为空');
+                return;
+            }
+            let arr = getWorkData();
+            arr[nowEditIndex].date = newDate;
+            arr[nowEditIndex].content = newCon;
+            saveData(arr);
+            closeEdit();
+            renderList();
+            alert('修改成功');
+        }
+
+        // 删除单条作业
+        function delSingle(index){
+            if(!confirm('确定删除这条作业？'))return;
+            let arr = getWorkData();
+            arr.splice(index,1);
+            saveData(arr);
+            renderList();
+        }
+
+        // 清空全部
+        function clearAll(){
+            if(!confirm('确定清空所有作业？无法恢复！'))return;
+            saveData([]);
+            renderList();
+        }
+
+        renderList();
+    </script>
+</body>
+</html>
