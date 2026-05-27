@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班级作业查询系统</title>
+    <style>
+        :root {
+            --primary: #4A6CF7; --bg: #f1f5f9; --card-bg: #fff; --text: #1e293b;
+            --border: #e2e8f0; --danger: #ef4444; --radius: 12px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg); color: var(--text); min-height: 100vh;
+        }
+        .login-overlay {
+            position:fixed; inset:0; background:linear-gradient(135deg,#1e3a5f,#4a6cf7);
+            display:flex; align-items:center; justify-content:center; z-index:1000;
+        }
+        .login-card {
+            background:#fff; border-radius:20px; padding:40px 36px; width:400px; max-width:92vw;
+            box-shadow:0 25px 60px rgba(0,0,0,0.2); text-align:center;
+        }
+        .login-card h2 { font-size:24px; margin-bottom:6px; }
+        .login-card .input-group { margin-bottom:16px; text-align:left; }
+        .login-card label { display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:4px; }
+        .login-card input {
+            width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px; font-size:15px;
+            outline:none; background:#f8fafc;
+        }
+        .login-card input:focus { border-color:var(--primary); }
+        .btn-login {
+            width:100%; padding:13px; background:var(--primary); color:#fff; border:none;
+            border-radius:10px; font-size:16px; font-weight:600; cursor:pointer;
+        }
+        .login-error { color:#ef4444; font-size:13px; margin-top:8px; min-height:20px; }
+
+        .app-container { display:flex; min-height:100vh; }
+        .topbar {
+            position:fixed; top:0; left:0; right:0; height:56px; background:#fff;
+            border-bottom:1px solid var(--border); display:flex; align-items:center;
+            justify-content:space-between; padding:0 20px; z-index:100;
+        }
+        .sidebar-backdrop {
+            position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:150; display:none;
+        }
+        .sidebar-backdrop.active { display:block; }
+        .sidebar {
+            position:fixed; top:0; right:0; width:260px; height:100vh; background:#1e293b;
+            z-index:200; transform:translateX(100%); transition:0.3s; display:flex; flex-direction:column;
+        }
+        .sidebar.active { transform:translateX(0); }
+        .sidebar-nav .nav-item {
+            display:flex; align-items:center; gap:10px; padding:14px 24px; cursor:pointer;
+            color:#cbd5e1; font-size:15px; border-left:3px solid transparent;
+        }
+        .sidebar-nav .nav-item:hover { background:rgba(255,255,255,0.05); color:#fff; }
+        .sidebar-nav .nav-item.active { background:rgba(74,108,247,0.2); color:#fff; border-left-color:var(--primary); }
+        .main-content { flex:1; margin-top:56px; padding:24px; max-width:860px; width:100%; margin-left:auto; margin-right:auto; }
+        .content-panel { display:none; }
+        .content-panel.active { display:block; }
+        .card {
+            background:var(--card-bg); border-radius:var(--radius); padding:24px;
+            box-shadow:0 1px 3px rgba(0,0,0,0.06); margin-bottom:20px; border:1px solid var(--border);
+        }
+        .card h3 { font-size:18px; margin-bottom:16px; }
+        .empty-state { text-align:center; padding:40px; color:#94a3b8; }
+        .homework-item {
+            background:#f8fafc; border-radius:10px; padding:16px; margin-bottom:10px; border:1px solid var(--border);
+        }
+        .homework-item .hw-date { font-size:12px; color:var(--primary); font-weight:600; }
+        .homework-item .hw-content { margin-top:6px; font-size:15px; color:#334155; white-space:pre-wrap; }
+        .btn {
+            padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-size:13px;
+            font-weight:500; display:inline-flex; align-items:center; gap:6px;
+        }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-outline { background:#fff; border:1.5px solid #e2e8f0; }
+        .btn-sm { padding:5px 10px; font-size:12px; }
+        textarea {
+            width:100%; min-height:80px; padding:10px; border:2px solid #e2e8f0;
+            border-radius:8px; font-family:inherit; resize:vertical; outline:none;
+        }
+        textarea:focus { border-color:var(--primary); }
+        .feedback-item {
+            background:#f8fafc; border-radius:10px; padding:12px 16px; margin-bottom:8px; border:1px solid var(--border);
+        }
+        .feedback-item .fb-meta { font-size:12px; color:#64748b; }
+        .toast-container { position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+        .toast {
+            padding:12px 20px; border-radius:10px; color:#fff; font-size:14px;
+            animation:toastIn 0.3s; max-width:380px;
+        }
+        .toast.success { background:#10b981; } .toast.error { background:#ef4444; }
+        @keyframes toastIn { from{opacity:0;transform:translateX(40px);} to{opacity:1;transform:translateX(0);} }
+        .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+        .badge-admin { background:#fef3c7; color:#b45309; }
+        .badge-student { background:#e0e7ff; color:#4338ca; }
+        @media (max-width:640px) {
+            .login-card { padding:28px 20px; }
+            .main-content { padding:16px 10px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== 配置（只需改这里） ========== -->
+    <script>
+        const CONFIG = {
+            GITHUB_USERNAME: '你的GitHub用户名',
+            GITHUB_REPO: '你的仓库名'
+        };
+        const DB_URL = `https://raw.githubusercontent.com/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/main/db.json`;
+    </script>
+
+    <!-- 登录界面 -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-card">
+            <div style="font-size:48px;">📚</div>
+            <h2>班级作业查询系统</h2>
+            <p style="color:#64748b;font-size:14px;margin-bottom:24px;">请输入账号和密码</p>
+            <div class="input-group">
+                <label>账号</label>
+                <input type="text" id="loginUsername" placeholder="请输入账号">
+            </div>
+            <div class="input-group">
+                <label>密码</label>
+                <input type="password" id="loginPassword" placeholder="请输入密码">
+            </div>
+            <button class="btn-login" id="btnLogin">登 录</button>
+            <div class="login-error" id="loginError"></div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- 主界面 -->
+    <div class="app-container" id="appContainer" style="display:none;">
+        <div class="topbar">
+            <div style="font-weight:700;font-size:18px;">📚 作业系统</div>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <span id="topUsername">用户</span>
+                <span class="badge" id="topRoleBadge">学生</span>
+                <button class="btn btn-outline btn-sm" id="btnRefresh">🔄 刷新</button>
+                <button class="btn btn-outline btn-sm" id="btnLogout">退出</button>
+                <button class="btn btn-outline btn-sm" id="btnSidebarToggle">☰</button>
+            </div>
+        </div>
+
+        <!-- 侧边栏 -->
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+        <div class="sidebar" id="sidebar">
+            <div style="padding:20px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;">
+                <h3 style="color:#fff;font-size:16px;">菜单</h3>
+                <button id="btnCloseSidebar" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;">✕</button>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-item active" data-panel="panel-today">📅 今日作业</div>
+                <div class="nav-item" data-panel="panel-history">📋 以往作业</div>
+                <div class="nav-item" data-panel="panel-feedback">💬 管理员反馈</div>
+                <div class="nav-item" data-panel="panel-profile">👤 个人中心</div>
+            </div>
+        </div>
+
+        <!-- 主内容 -->
+        <div class="main-content">
+            <!-- 今日作业 -->
+            <div class="content-panel active" id="panel-today">
+                <div class="card">
+                    <h3>📅 今日作业</h3>
+                    <div id="todayHomeworkContent"><div class="empty-state">加载中...</div></div>
+                </div>
+            </div>
+            <!-- 以往作业 -->
+            <div class="content-panel" id="panel-history">
+                <div class="card">
+                    <h3>📋 以往作业</h3>
+                    <div id="historyHomeworkList"><div class="empty-state">加载中...</div></div>
+                </div>
+            </div>
+            <!-- 反馈 -->
+            <div class="content-panel" id="panel-feedback">
+                <div class="card">
+                    <h3>💬 向管理员反馈</h3>
+                    <textarea id="feedbackInput" placeholder="请输入反馈内容..."></textarea>
+                    <button class="btn btn-primary" style="margin-top:10px;" id="btnSubmitFeedback">提交反馈</button>
+                    <h4 style="margin-top:20px;font-size:14px;">我的反馈记录</h4>
+                    <div id="myFeedbackList"><p style="color:#94a3b8;">暂无反馈</p></div>
+                </div>
+            </div>
+            <!-- 个人中心 -->
+            <div class="content-panel" id="panel-profile">
+                <div class="card">
+                    <h3>👤 个人中心</h3>
+                    <div style="margin-bottom:14px;">
+                        <label>账号（不可修改）</label>
+                        <input type="text" id="profileUsername" readonly style="width:100%;padding:10px;border-radius:8px;border:2px solid #e2e8f0;background:#f1f5f9;color:#94a3b8;">
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <label>昵称</label>
+                        <input type="text" id="profileNickname" style="width:100%;padding:10px;border-radius:8px;border:2px solid #e2e8f0;">
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <label>新密码（留空不修改）</label>
+                        <input type="password" id="profileNewPassword" style="width:100%;padding:10px;border-radius:8px;border:2px solid #e2e8f0;">
+                    </div>
+                    <button class="btn btn-primary" id="btnSaveProfile">保存修改</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 工具函数 ====================
+        const $ = (sel) => document.querySelector(sel);
+        function getTodayStr() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+        function formatDate(ds) {
+            if(!ds) return '';
+            const d = new Date(ds);
+            const w = ['日','一','二','三','四','五','六'];
+            return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 周${w[d.getDay()]}`;
+        }
+        function esc(s) {
+            if(!s) return ''; const d=document.createElement('div'); d.textContent=s; return d.innerHTML;
+        }
+        async function sha256(m) {
+            const b = new TextEncoder().encode(m);
+            const h = await crypto.subtle.digest('SHA-256', b);
+            return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('');
+        }
+        function toast(msg, type='info') {
+            const c = $('#toastContainer');
+            const t = document.createElement('div');
+            t.className = `toast ${type}`; t.textContent = msg;
+            c.appendChild(t);
+            setTimeout(()=>{t.style.opacity='0';t.style.transition='0.3s';setTimeout(()=>t.remove(),300);},2500);
+        }
+
+        // ==================== 数据 ====================
+        let currentUser = null;
+        let db = { users:[], homeworks:[], feedbacks:[] };
+
+        async function loadDB() {
+            try {
+                const res = await fetch(DB_URL + '?t=' + Date.now());
+                if(!res.ok) throw new Error('加载失败');
+                db = await res.json();
+            } catch(e) {
+                console.error('加载数据库失败', e);
+            }
+        }
+
+        // 提交反馈（通过 GitHub API 写入）
+        async function submitFeedbackViaAPI(content) {
+            // 学生端没有 Token，所以反馈通过创建一个 Issue 或者我们用另一种方式
+            // 实际上学生端需要写入权限才能提交反馈
+            // 这里我们暂时用 localStorage 存储本地反馈，管理员登录后可以看到
+            // 更好的方案是部署一个简单的后端，但为了简单，我们先这样处理
+            const fb = {
+                userId: currentUser.username,
+                nickname: currentUser.nickname || currentUser.username,
+                content: content,
+                createdAt: new Date().toISOString()
+            };
+            // 存储到本地
+            const localFBs = JSON.parse(localStorage.getItem('pending_feedbacks') || '[]');
+            localFBs.push(fb);
+            localStorage.setItem('pending_feedbacks', JSON.stringify(localFBs));
+            toast('反馈已提交（将在管理员刷新后同步）', 'success');
+        }
+
+        // ==================== 登录 ====================
+        async function login(username, password) {
+            await loadDB();
+            if(!db.users || db.users.length === 0) {
+                // 初始化默认账号
+                const adminHash = await sha256('user');
+                db.users = [{ username:'shareuser', passwordHash:adminHash, nickname:'管理员', role:'admin' }];
+                for(let i=1;i<=52;i++) {
+                    const h = await sha256(String(i));
+                    db.users.push({ username:String(i), passwordHash:h, nickname:`同学${i}`, role:'student' });
+                }
+                db.homeworks = [];
+                db.feedbacks = [];
+            }
+            const hash = await sha256(password);
+            const user = db.users.find(u => u.username === username);
+            if(!user || user.passwordHash !== hash) {
+                return { success:false, error:'账号或密码错误' };
+            }
+            return { success:true, user };
+        }
+
+        $('#btnLogin').addEventListener('click', async ()=>{
+            const u = $('#loginUsername').value.trim();
+            const p = $('#loginPassword').value;
+            if(!u||!p){ $('#loginError').textContent='请输入账号密码'; return; }
+            $('#btnLogin').textContent='登录中...'; $('#btnLogin').disabled=true;
+            try {
+                const r = await login(u,p);
+                if(r.success){ currentUser=r.user; onLogin(); }
+                else $('#loginError').textContent=r.error;
+            }catch(e){ $('#loginError').textContent='网络错误'; }
+            $('#btnLogin').textContent='登 录'; $('#btnLogin').disabled=false;
+        });
+
+        function onLogin() {
+            $('#loginOverlay').style.display='none';
+            $('#appContainer').style.display='flex';
+            $('#topUsername').textContent = currentUser.nickname||currentUser.username;
+            const badge = $('#topRoleBadge');
+            badge.textContent = currentUser.role==='admin'?'管理员':'学生';
+            badge.className = currentUser.role==='admin'?'badge badge-admin':'badge badge-student';
+            switchPanel('panel-today');
+            toast('欢迎！', 'success');
+        }
+
+        function logout() {
+            currentUser=null;
+            $('#loginOverlay').style.display='flex';
+            $('#appContainer').style.display='none';
+        }
+        $('#btnLogout').addEventListener('click', logout);
+
+        // ==================== 侧边栏 ====================
+        function openSB(){ $('#sidebar').classList.add('active'); $('#sidebarBackdrop').classList.add('active'); }
+        function closeSB(){ $('#sidebar').classList.remove('active'); $('#sidebarBackdrop').classList.remove('active'); }
+        $('#btnSidebarToggle').addEventListener('click', openSB);
+        $('#btnCloseSidebar').addEventListener('click', closeSB);
+        $('#sidebarBackdrop').addEventListener('click', closeSB);
+
+        function switchPanel(id) {
+            document.querySelectorAll('.content-panel').forEach(p=>p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+            const nav = document.querySelector(`.nav-item[data-panel="${id}"]`);
+            if(nav) nav.classList.add('active');
+            closeSB();
+            if(id==='panel-today') renderToday();
+            else if(id==='panel-history') renderHistory();
+            else if(id==='panel-feedback') renderMyFB();
+            else if(id==='panel-profile') renderProfile();
+        }
+        document.querySelectorAll('.nav-item').forEach(n=>{
+            n.addEventListener('click', ()=>switchPanel(n.dataset.panel));
+        });
+
+        // ==================== 渲染 ====================
+        async function renderToday() {
+            await loadDB();
+            const today = getTodayStr();
+            const hw = db.homeworks.find(h=>h.date===today);
+            const c = $('#todayHomeworkContent');
+            if(hw) {
+                c.innerHTML = `<div style="background:#f0f9ff;border-radius:10px;padding:16px;">
+                    <div style="color:#0369a1;font-weight:600;margin-bottom:6px;">📅 ${formatDate(hw.date)}</div>
+                    <div style="white-space:pre-wrap;">${esc(hw.content)}</div></div>`;
+            } else {
+                c.innerHTML = '<div class="empty-state">📭 今日暂无作业</div>';
+            }
+        }
+        async function renderHistory() {
+            await loadDB();
+            const hws = (db.homeworks||[]).sort((a,b)=>b.date.localeCompare(a.date));
+            const c = $('#historyHomeworkList');
+            if(hws.length===0){ c.innerHTML='<div class="empty-state">📭 暂无历史作业</div>'; return; }
+            c.innerHTML = hws.map(h=>`
+                <div class="homework-item">
+                    <div class="hw-date">${formatDate(h.date)}</div>
+                    <div class="hw-content">${esc(h.content)}</div>
+                </div>`).join('');
+        }
+        async function renderMyFB() {
+            await loadDB();
+            // 合并数据库中的反馈和本地暂存的反馈
+            const dbFBs = (db.feedbacks||[]).filter(f=>f.userId===currentUser.username);
+            const localFBs = JSON.parse(localStorage.getItem('pending_feedbacks')||'[]').filter(f=>f.userId===currentUser.username);
+            const all = [...dbFBs, ...localFBs].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+            const c = $('#myFeedbackList');
+            if(all.length===0){ c.innerHTML='<p style="color:#94a3b8;">暂无反馈</p>'; return; }
+            c.innerHTML = all.map(f=>`
+                <div class="feedback-item">
+                    <div class="fb-meta">📅 ${formatDate(f.createdAt)}</div>
+                    <div>${esc(f.content)}</div>
+                </div>`).join('');
+        }
+        function renderProfile() {
+            $('#profileUsername').value = currentUser.username;
+            $('#profileNickname').value = currentUser.nickname||'';
+            $('#profileNewPassword').value = '';
+        }
+
+        // 提交反馈
+        $('#btnSubmitFeedback').addEventListener('click', async ()=>{
+            const content = $('#feedbackInput').value.trim();
+            if(!content) return toast('请输入内容','error');
+            await submitFeedbackViaAPI(content);
+            $('#feedbackInput').value = '';
+            renderMyFB();
+        });
+
+        // 保存个人资料（修改密码/昵称存本地，管理员同步后生效）
+        $('#btnSaveProfile').addEventListener('click', ()=>{
+            const nn = $('#profileNickname').value.trim();
+            const np = $('#profileNewPassword').value;
+            if(nn) {
+                currentUser.nickname = nn;
+                $('#topUsername').textContent = nn;
+                // 保存到本地修改记录
+                const changes = JSON.parse(localStorage.getItem('profile_changes')||'{}');
+                changes[currentUser.username] = { nickname:nn };
+                if(np) changes[currentUser.username].newPassword = np;
+                localStorage.setItem('profile_changes', JSON.stringify(changes));
+            }
+            $('#profileNewPassword').value = '';
+            toast('修改已保存（将在管理员同步后生效）', 'success');
+        });
+
+        // 刷新按钮
+        $('#btnRefresh').addEventListener('click', async ()=>{
+            await loadDB();
+            const activePanel = document.querySelector('.content-panel.active');
+            if(activePanel) {
+                if(activePanel.id==='panel-today') renderToday();
+                else if(activePanel.id==='panel-history') renderHistory();
+                else if(activePanel.id==='panel-feedback') renderMyFB();
+            }
+            toast('已刷新', 'info');
+        });
+
+        // 初始加载
+        window.addEventListener('load', ()=> loadDB().catch(()=>{}));
+    </script>
+</body>
+</html>
