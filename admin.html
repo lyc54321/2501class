@@ -1,0 +1,370 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员面板 - 班级作业系统</title>
+    <style>
+        :root {
+            --primary: #4A6CF7; --bg: #f1f5f9; --card-bg: #fff; --text: #1e293b;
+            --border: #e2e8f0; --danger: #ef4444; --radius: 12px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg); color: var(--text); min-height: 100vh; padding: 24px;
+        }
+        .container { max-width: 900px; margin:0 auto; }
+        .card {
+            background:var(--card-bg); border-radius:var(--radius); padding:24px;
+            box-shadow:0 1px 3px rgba(0,0,0,0.06); margin-bottom:20px; border:1px solid var(--border);
+        }
+        .card h3 { font-size:18px; margin-bottom:16px; }
+        .btn {
+            padding:9px 18px; border-radius:8px; border:none; cursor:pointer; font-size:14px;
+            font-weight:500; display:inline-flex; align-items:center; gap:6px; margin-right:8px;
+        }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-danger { background:#fff; color:var(--danger); border:1.5px solid #fca5a5; }
+        .btn-outline { background:#fff; border:1.5px solid #e2e8f0; }
+        .btn-sm { padding:5px 10px; font-size:12px; }
+        textarea, input[type="text"], input[type="password"], input[type="date"] {
+            padding:10px; border:2px solid #e2e8f0; border-radius:8px; font-size:14px;
+            outline:none; font-family:inherit; margin-bottom:8px;
+        }
+        textarea { width:100%; min-height:80px; resize:vertical; }
+        input:focus, textarea:focus { border-color:var(--primary); }
+        .homework-item {
+            background:#f8fafc; border-radius:10px; padding:16px; margin-bottom:10px; border:1px solid var(--border);
+        }
+        .feedback-item {
+            background:#f8fafc; border-radius:10px; padding:12px 16px; margin-bottom:8px; border:1px solid var(--border);
+        }
+        .feedback-item .fb-meta { font-size:12px; color:#64748b; }
+        .account-table { width:100%; border-collapse:collapse; font-size:14px; }
+        .account-table th, .account-table td { padding:10px 14px; text-align:left; border-bottom:1px solid var(--border); }
+        .account-table th { background:#f8fafc; }
+        .toast-container { position:fixed; top:20px; right:20px; z-index:9999; }
+        .toast {
+            padding:12px 20px; border-radius:10px; color:#fff; font-size:14px;
+            animation:toastIn 0.3s; margin-bottom:8px;
+        }
+        .toast.success { background:#10b981; } .toast.error { background:#ef4444; }
+        @keyframes toastIn { from{opacity:0;transform:translateX(40px);} to{opacity:1;transform:translateX(0);} }
+        .confirm-overlay {
+            position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:300;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .confirm-dialog {
+            background:#fff; border-radius:16px; padding:28px; max-width:400px; text-align:center;
+        }
+        label { display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:4px; }
+    </style>
+</head>
+<body>
+    <!-- ========== 配置（替换为你的信息） ========== -->
+    <script>
+        const CONFIG = {
+            GITHUB_USERNAME: 'lyc54321',
+            GITHUB_REPO: '2501class',
+            GITHUB_TOKEN: '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'
+        };
+        const API_URL = `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/contents/db.json`;
+        const HEADERS = {
+            'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+            'Accept': 'application/vnd.github.v3+json'
+        };
+    </script>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <div id="confirmContainer"></div>
+
+    <div class="container">
+        <h1 style="text-align:center;margin-bottom:24px;">⚙️ 管理员面板</h1>
+
+        <!-- 发布作业 -->
+        <div class="card">
+            <h3>📝 发布作业</h3>
+            <label>日期</label>
+            <input type="date" id="hwDate" style="display:block;">
+            <label>作业内容</label>
+            <textarea id="hwContent" placeholder="请输入作业内容..."></textarea>
+            <button class="btn btn-primary" id="btnPublish">发布作业</button>
+        </div>
+
+        <!-- 作业列表 -->
+        <div class="card">
+            <h3>📋 所有作业</h3>
+            <div id="hwList"><p style="color:#94a3b8;">加载中...</p></div>
+        </div>
+
+        <!-- 反馈列表 -->
+        <div class="card">
+            <h3>📩 学生反馈</h3>
+            <div id="fbList"><p style="color:#94a3b8;">加载中...</p></div>
+        </div>
+
+        <!-- 账号管理 -->
+        <div class="card">
+            <h3>👥 账号管理</h3>
+            <div style="margin-bottom:12px;">
+                <button class="btn btn-primary btn-sm" id="btnAdd">➕ 新建</button>
+                <button class="btn btn-danger btn-sm" id="btnBatchDel" disabled>🗑 批量删除</button>
+                <button class="btn btn-outline btn-sm" id="btnSelAll">全选</button>
+                <button class="btn btn-outline btn-sm" id="btnDeselAll">取消</button>
+            </div>
+            <div id="addForm" style="display:none;padding:14px;background:#f8fafc;border-radius:10px;margin-bottom:12px;">
+                <input type="text" id="newUser" placeholder="账号" style="margin-right:6px;">
+                <input type="password" id="newPass" placeholder="密码" style="margin-right:6px;">
+                <input type="text" id="newNick" placeholder="昵称">
+                <button class="btn btn-primary btn-sm" id="btnCreate">创建</button>
+                <button class="btn btn-outline btn-sm" id="btnCancelAdd">取消</button>
+            </div>
+            <table class="account-table">
+                <thead><tr><th style="width:40px;">选</th><th>账号</th><th>昵称</th><th>角色</th></tr></thead>
+                <tbody id="userTableBody"><tr><td colspan="4">加载中...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const $ = (sel) => document.querySelector(sel);
+        function getTodayStr() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+        function formatDate(ds) {
+            if(!ds) return ''; const d=new Date(ds);
+            const w=['日','一','二','三','四','五','六'];
+            return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 周${w[d.getDay()]}`;
+        }
+        function esc(s) { if(!s) return ''; const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+        async function sha256(m) {
+            const b=new TextEncoder().encode(m); const h=await crypto.subtle.digest('SHA-256',b);
+            return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('');
+        }
+        function toast(msg,type='info') {
+            const c=$('#toastContainer'); const t=document.createElement('div');
+            t.className=`toast ${type}`; t.textContent=msg; c.appendChild(t);
+            setTimeout(()=>{t.style.opacity='0';t.style.transition='0.3s';setTimeout(()=>t.remove(),300);},2500);
+        }
+        function confirm(title,msg,cb) {
+            const ct=$('#confirmContainer'); const o=document.createElement('div');
+            o.className='confirm-overlay';
+            o.innerHTML=`<div class="confirm-dialog"><h4>${title}</h4><p>${msg}</p>
+                <div style="margin-top:16px;"><button class="btn btn-outline cancel">取消</button>
+                <button class="btn btn-danger ok">确认</button></div></div>`;
+            ct.appendChild(o);
+            o.querySelector('.cancel').addEventListener('click',()=>o.remove());
+            o.querySelector('.ok').addEventListener('click',()=>{o.remove();cb();});
+        }
+
+        // ==================== GitHub API ====================
+        async function fetchDB() {
+            const res = await fetch(API_URL, { headers:HEADERS });
+            if(res.status===404) {
+                // 初始化
+                const initData = { users:[], homeworks:[], feedbacks:[] };
+                const adminHash = await sha256('user');
+                initData.users.push({ username:'shareuser', passwordHash:adminHash, nickname:'管理员', role:'admin' });
+                for(let i=1;i<=52;i++) {
+                    const h = await sha256(String(i));
+                    initData.users.push({ username:String(i), passwordHash:h, nickname:`同学${i}`, role:'student' });
+                }
+                await saveDB(initData, null);
+                return initData;
+            }
+            if(!res.ok) throw new Error('读取失败');
+            const d = await res.json();
+            return JSON.parse(atob(d.content));
+        }
+
+        async function saveDB(data, sha) {
+            const contentStr = JSON.stringify(data, null, 2);
+            const body = {
+                message: 'Update db.json',
+                content: btoa(unescape(encodeURIComponent(contentStr)))
+            };
+            if(sha) body.sha = sha;
+            else {
+                try {
+                    const exist = await fetch(API_URL, { headers:HEADERS });
+                    if(exist.ok) {
+                        const d = await exist.json();
+                        body.sha = d.sha;
+                    }
+                } catch(e) {}
+            }
+            const res = await fetch(API_URL, {
+                method:'PUT',
+                headers:{...HEADERS, 'Content-Type':'application/json'},
+                body: JSON.stringify(body)
+            });
+            if(!res.ok) throw new Error('保存失败');
+            const rd = await res.json();
+            return rd.content.sha;
+        }
+
+        // ==================== 全局 ====================
+        let db = null;
+        let dbSHA = null;
+        let selectedUsers = new Set();
+
+        async function load() {
+            try {
+                const data = await fetchDB();
+                // fetchDB 返回的是解析后的对象，sha需要重新获取
+                const res = await fetch(API_URL, { headers:HEADERS });
+                if(res.ok) {
+                    const d = await res.json();
+                    dbSHA = d.sha;
+                }
+                db = data;
+                if(!db.users) db.users = [];
+                if(!db.homeworks) db.homeworks = [];
+                if(!db.feedbacks) db.feedbacks = [];
+            } catch(e) {
+                toast('加载失败: '+e.message, 'error');
+            }
+        }
+
+        async function save() {
+            try {
+                dbSHA = await saveDB(db, dbSHA);
+                toast('已保存', 'success');
+            } catch(e) {
+                toast('保存失败: '+e.message, 'error');
+            }
+        }
+
+        // ==================== 渲染 ====================
+        function renderHW() {
+            const c = $('#hwList');
+            if(!db.homeworks.length){ c.innerHTML='<p style="color:#94a3b8;">暂无作业</p>'; return; }
+            c.innerHTML = db.homeworks.sort((a,b)=>b.date.localeCompare(a.date)).map(h=>`
+                <div class="homework-item">
+                    <div style="font-size:12px;color:var(--primary);font-weight:600;">📅 ${formatDate(h.date)}</div>
+                    <div style="margin-top:4px;white-space:pre-wrap;">${esc(h.content)}</div>
+                    <div style="margin-top:8px;display:flex;gap:6px;">
+                        <button class="btn btn-outline btn-sm e-hw" data-date="${h.date}">✏ 编辑</button>
+                        <button class="btn btn-danger btn-sm d-hw" data-date="${h.date}">🗑 删除</button>
+                    </div>
+                </div>`).join('');
+            c.querySelectorAll('.e-hw').forEach(b=>b.addEventListener('click',()=>editHW(b.dataset.date)));
+            c.querySelectorAll('.d-hw').forEach(b=>b.addEventListener('click',()=>delHW(b.dataset.date)));
+        }
+        function editHW(date) {
+            const hw = db.homeworks.find(h=>h.date===date);
+            if(!hw) return;
+            const nc = prompt('修改作业内容：', hw.content);
+            if(nc!==null && nc.trim()!=='') {
+                hw.content = nc.trim();
+                save().then(()=>renderHW());
+            }
+        }
+        function delHW(date) {
+            confirm('删除作业', `确定删除 ${formatDate(date)} 的作业吗？`, ()=>{
+                db.homeworks = db.homeworks.filter(h=>h.date!==date);
+                save().then(()=>renderHW());
+            });
+        }
+
+        function renderFB() {
+            const c = $('#fbList');
+            if(!db.feedbacks.length){ c.innerHTML='<p style="color:#94a3b8;">暂无反馈</p>'; return; }
+            c.innerHTML = db.feedbacks.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).map(f=>`
+                <div class="feedback-item">
+                    <div class="fb-meta">👤 ${esc(f.userId)} (${esc(f.nickname)}) · 📅 ${formatDate(f.createdAt)}</div>
+                    <div>${esc(f.content)}</div>
+                </div>`).join('');
+        }
+
+        function renderUsers() {
+            const t = $('#userTableBody');
+            selectedUsers.clear();
+            t.innerHTML = db.users.map(u=>{
+                const isAdmin = u.role==='admin';
+                return `<tr>
+                    <td><input type="checkbox" class="cb-u" data-un="${esc(u.username)}" ${isAdmin?'disabled':''}></td>
+                    <td>${esc(u.username)}</td>
+                    <td>${esc(u.nickname||'')}</td>
+                    <td>${isAdmin?'管理员':'学生'}</td>
+                </tr>`;
+            }).join('');
+            t.querySelectorAll('.cb-u:not([disabled])').forEach(cb=>{
+                cb.addEventListener('change', function(){
+                    if(this.checked) selectedUsers.add(this.dataset.un);
+                    else selectedUsers.delete(this.dataset.un);
+                    $('#btnBatchDel').disabled = selectedUsers.size===0;
+                });
+            });
+        }
+
+        // ==================== 事件 ====================
+        $('#btnPublish').addEventListener('click', async ()=>{
+            const date = $('#hwDate').value;
+            const content = $('#hwContent').value.trim();
+            if(!date||!content) return toast('请填写日期和内容','error');
+            const exist = db.homeworks.find(h=>h.date===date);
+            if(exist) {
+                confirm('覆盖', `日期 ${formatDate(date)} 已有作业，覆盖吗？`, ()=>{
+                    exist.content = content;
+                    save().then(()=>{renderHW(); $('#hwContent').value='';});
+                });
+            } else {
+                db.homeworks.push({ date, content });
+                await save();
+                renderHW();
+                $('#hwContent').value = '';
+                toast('发布成功','success');
+            }
+        });
+
+        $('#btnAdd').addEventListener('click', ()=>$('#addForm').style.display='block');
+        $('#btnCancelAdd').addEventListener('click', ()=>$('#addForm').style.display='none');
+        $('#btnCreate').addEventListener('click', async ()=>{
+            const u = $('#newUser').value.trim();
+            const p = $('#newPass').value;
+            const n = $('#newNick').value.trim() || u;
+            if(!u||!p) return toast('账号密码不能为空','error');
+            if(db.users.find(x=>x.username===u)) return toast('账号已存在','error');
+            const hash = await sha256(p);
+            db.users.push({ username:u, passwordHash:hash, nickname:n, role:'student' });
+            await save();
+            $('#addForm').style.display='none';
+            renderUsers();
+            toast('账号创建成功','success');
+        });
+
+        $('#btnSelAll').addEventListener('click', ()=>{
+            document.querySelectorAll('.cb-u:not([disabled])').forEach(c=>{c.checked=true;selectedUsers.add(c.dataset.un);});
+            $('#btnBatchDel').disabled=false;
+        });
+        $('#btnDeselAll').addEventListener('click', ()=>{
+            document.querySelectorAll('.cb-u:not([disabled])').forEach(c=>c.checked=false);
+            selectedUsers.clear();
+            $('#btnBatchDel').disabled=true;
+        });
+        $('#btnBatchDel').addEventListener('click', ()=>{
+            if(selectedUsers.size===0) return;
+            confirm('批量删除', `确定删除 ${selectedUsers.size} 个账号吗？`, async ()=>{
+                db.users = db.users.filter(u=>!selectedUsers.has(u.username));
+                await save();
+                selectedUsers.clear();
+                $('#btnBatchDel').disabled=true;
+                renderUsers();
+                toast('已删除','success');
+            });
+        });
+
+        // 初始加载
+        (async ()=>{
+            await load();
+            renderHW();
+            renderFB();
+            renderUsers();
+            if(!$('#hwDate').value) $('#hwDate').value = getTodayStr();
+        })();
+    </script>
+</body>
+</html>
