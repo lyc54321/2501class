@@ -1,0 +1,323 @@
+
+{
+  "users": [
+    {
+      "id": "shareuser",
+      "password": "user",
+      "nickname": "管理员",
+      "isAdmin": true
+    },
+    {
+      "id": "1",
+      "password": "1",
+      "nickname": "学生1",
+      "isAdmin": false
+    },
+    {
+      "id": "2",
+      "password": "2",
+      "nickname": "学生2",
+      "isAdmin": false
+    },
+    {
+      "id": "3",
+      "password": "3",
+      "nickname": "学生3",
+      "isAdmin": false
+    },
+    {
+      "id": "4",
+      "password": "4",
+      "nickname": "学生4",
+      "isAdmin": false
+    },
+    {
+      "id": "5",
+      "password": "5",
+      "nickname": "学生5",
+      "isAdmin": false
+    },
+    {
+      "id": "6",
+      "password": "6",
+      "nickname": "学生6",
+      "isAdmin": false
+    },
+    {
+      "id": "7",
+      "password": "7",
+      "nickname": "学生7",
+      "isAdmin": false
+    },
+    {
+      "id": "8",
+      "password": "8",
+      "nickname": "学生8",
+      "isAdmin": false
+    },
+    {
+      "id": "9",
+      "password": "9",
+      "nickname": "学生9",
+      "isAdmin": false
+    },
+    {
+      "id": "10",
+      "password": "10",
+      "nickname": "学生10",
+      "isAdmin": false
+    },
+    {
+      "id": "11",
+      "password": "11",
+      "nickname": "学生11",
+      "isAdmin": false
+    },
+    {
+      "id": "12",
+      "password": "12",
+      "nickname": "学生12",
+      "isAdmin": false
+    },
+    {
+      "id": "13",
+      "password": "13",
+      "nickname": "学生13",
+      "isAdmin": false
+    },
+    {
+      "id": "14",
+      "password": "14",
+      "nickname": "学生14",
+      "isAdmin": false
+    },
+    {
+      "id": "15",
+      "password": "15",
+      "nickname": "学生15",
+      "isAdmin": false
+    },
+    {
+      "id": "16",
+      "password": "16",
+      "nickname": "学生16",
+      "isAdmin": false
+    },
+    {
+      "id": "17",
+      "password": "17",
+      "nickname": "学生17",
+      "isAdmin": false
+    },
+    {
+      "id": "18",
+      "password": "18",
+      "nickname": "学生18",
+      "isAdmin": false
+    },
+    {
+      "id": "19",
+      "password": "19",
+      "nickname": "学生19",
+      "isAdmin": false
+    },
+    {
+      "id": "20",
+      "password": "20",
+      "nickname": "学生20",
+      "isAdmin": false
+    },
+    {
+      "id": "21",
+      "password": "21",
+      "nickname": "学生21",
+      "isAdmin": false
+    },
+    {
+      "id": "22",
+      "password": "22",
+      "nickname": "学生22",
+      "isAdmin": false
+    },
+    {
+      "id": "23",
+      "password": "23",
+      "nickname": "学生23",
+      "isAdmin": false
+    },
+    {
+      "id": "24",
+      "password": "24",
+      "nickname": "学生24",
+      "isAdmin": false
+    },
+    {
+      "id": "25",
+      "password": "25",
+      "nickname": "学生25",
+      "isAdmin": false
+    },
+    {
+      "id": "26",
+      "password": "26",
+      "nickname": "学生26",
+      "isAdmin": false
+    },
+    {
+      "id": "27",
+      "password": "27",
+      "nickname": "学生27",
+      "isAdmin": false
+    },
+    {
+      "id": "28",
+      "password": "28",
+      "nickname": "学生28",
+      "isAdmin": false
+    },
+    {
+      "id": "29",
+      "password": "29",
+      "nickname": "学生29",
+      "isAdmin": false
+    },
+    {
+      "id": "30",
+      "password": "30",
+      "nickname": "学生30",
+      "isAdmin": false
+    },
+    {
+      "id": "31",
+      "password": "31",
+      "nickname": "学生31",
+      "isAdmin": false
+    },
+    {
+      "id": "32",
+      "password": "32",
+      "nickname": "学生32",
+      "isAdmin": false
+    },
+    {
+      "id": "33",
+      "password": "33",
+      "nickname": "学生33",
+      "isAdmin": false
+    },
+    {
+      "id": "34",
+      "password": "34",
+      "nickname": "学生34",
+      "isAdmin": false
+    },
+    {
+      "id": "35",
+      "password": "35",
+      "nickname": "学生35",
+      "isAdmin": false
+    },
+    {
+      "id": "36",
+      "password": "36",
+      "nickname": "学生36",
+      "isAdmin": false
+    },
+    {
+      "id": "37",
+      "password": "37",
+      "nickname": "学生37",
+      "isAdmin": false
+    },
+    {
+      "id": "38",
+      "password": "38",
+      "nickname": "学生38",
+      "isAdmin": false
+    },
+    {
+      "id": "39",
+      "password": "39",
+      "nickname": "学生39",
+      "isAdmin": false
+    },
+    {
+      "id": "40",
+      "password": "40",
+      "nickname": "学生40",
+      "isAdmin": false
+    },
+    {
+      "id": "41",
+      "password": "41",
+      "nickname": "学生41",
+      "isAdmin": false
+    },
+    {
+      "id": "42",
+      "password": "42",
+      "nickname": "学生42",
+      "isAdmin": false
+    },
+    {
+      "id": "43",
+      "password": "43",
+      "nickname": "学生43",
+      "isAdmin": false
+    },
+    {
+      "id": "44",
+      "password": "44",
+      "nickname": "学生44",
+      "isAdmin": false
+    },
+    {
+      "id": "45",
+      "password": "45",
+      "nickname": "学生45",
+      "isAdmin": false
+    },
+    {
+      "id": "46",
+      "password": "46",
+      "nickname": "学生46",
+      "isAdmin": false
+    },
+    {
+      "id": "47",
+      "password": "47",
+      "nickname": "学生47",
+      "isAdmin": false
+    },
+    {
+      "id": "48",
+      "password": "48",
+      "nickname": "学生48",
+      "isAdmin": false
+    },
+    {
+      "id": "49",
+      "password": "49",
+      "nickname": "学生49",
+      "isAdmin": false
+    },
+    {
+      "id": "50",
+      "password": "50",
+      "nickname": "学生50",
+      "isAdmin": false
+    },
+    {
+      "id": "51",
+      "password": "51",
+      "nickname": "学生51",
+      "isAdmin": false
+    },
+    {
+      "id": "52",
+      "password": "52",
+      "nickname": "学生52",
+      "isAdmin": false
+    }
+  ]
+}

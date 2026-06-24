@@ -1,0 +1,696 @@
+
+&lt;!DOCTYPE html&gt;
+&lt;html lang="zh-CN"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+  &lt;title&gt;班级作业查询系统&lt;/title&gt;
+  &lt;style&gt;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', sans-serif;
+      background: #f0f2f5;
+    }
+    .login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .login-box {
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      width: 400px;
+    }
+    .login-box h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #333;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #666;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: #409eff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #66b1ff;
+    }
+    .header {
+      background: #409eff;
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 {
+      font-size: 20px;
+    }
+    .menu-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      right: -280px;
+      width: 280px;
+      height: 100%;
+      background: white;
+      box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+      transition: right 0.3s;
+      z-index: 1000;
+    }
+    .sidebar.open {
+      right: 0;
+    }
+    .sidebar-header {
+      background: #409eff;
+      color: white;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .sidebar-item {
+      padding: 15px 20px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+    .sidebar-item:hover {
+      background: #f5f7fa;
+    }
+    .sidebar-item.active {
+      background: #ecf5ff;
+      color: #409eff;
+    }
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      z-index: 999;
+    }
+    .overlay.show {
+      display: block;
+    }
+    .content {
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      margin-bottom: 15px;
+      color: #333;
+    }
+    .homework-item {
+      padding: 15px;
+      border: 1px solid #eee;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    .homework-title {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    .homework-date {
+      color: #999;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .homework-content {
+      color: #666;
+      line-height: 1.6;
+    }
+    .form-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .form-col {
+      flex: 1;
+    }
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+      min-height: 100px;
+    }
+    .btn-secondary {
+      background: #909399;
+      margin-right: 10px;
+    }
+    .btn-success {
+      background: #67c23a;
+    }
+    .btn-danger {
+      background: #f56c6c;
+    }
+    .btn-sm {
+      width: auto;
+      padding: 5px 15px;
+      font-size: 14px;
+    }
+    .user-list {
+      margin-top: 15px;
+    }
+    .user-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid #eee;
+      border-radius: 5px;
+      margin-bottom: 8px;
+    }
+    .feedback-item {
+      padding: 15px;
+      border: 1px solid #eee;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    .feedback-info {
+      color: #999;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .hidden {
+      display: none !important;
+    }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div id="loginPage" class="login-container"&gt;
+    &lt;div class="login-box"&gt;
+      &lt;h1&gt;班级作业查询系统&lt;/h1&gt;
+      &lt;div class="form-group"&gt;
+        &lt;label&gt;账号&lt;/label&gt;
+        &lt;input type="text" id="loginId" placeholder="请输入账号"&gt;
+      &lt;/div&gt;
+      &lt;div class="form-group"&gt;
+        &lt;label&gt;密码&lt;/label&gt;
+        &lt;input type="password" id="loginPassword" placeholder="请输入密码"&gt;
+      &lt;/div&gt;
+      &lt;button class="btn" onclick="login()"&gt;登录&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div id="mainPage" class="hidden"&gt;
+    &lt;div class="header"&gt;
+      &lt;h1&gt;班级作业查询系统&lt;/h1&gt;
+      &lt;button class="menu-btn" onclick="toggleSidebar()"&gt;☰&lt;/button&gt;
+    &lt;/div&gt;
+
+    &lt;div class="overlay" id="overlay" onclick="toggleSidebar()"&gt;&lt;/div&gt;
+    &lt;div class="sidebar" id="sidebar"&gt;
+      &lt;div class="sidebar-header"&gt;
+        &lt;span id="currentUser"&gt;用户&lt;/span&gt;
+        &lt;button class="menu-btn" onclick="toggleSidebar()"&gt;×&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div class="sidebar-item active" onclick="showSection('today')"&gt;今日作业&lt;/div&gt;
+      &lt;div class="sidebar-item" onclick="showSection('feedback')" id="feedbackMenuItem"&gt;管理员反馈&lt;/div&gt;
+      &lt;div class="sidebar-item" onclick="showSection('history')"&gt;以往作业&lt;/div&gt;
+      &lt;div class="sidebar-item" onclick="showSection('profile')"&gt;个人中心&lt;/div&gt;
+      &lt;div class="sidebar-item" onclick="logout()" style="color: #f56c6c;"&gt;退出登录&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class="content"&gt;
+      &lt;div id="todaySection"&gt;
+        &lt;div class="card"&gt;
+          &lt;h2&gt;今日作业&lt;/h2&gt;
+          &lt;div id="todayHomeworkList"&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div id="feedbackSection" class="hidden"&gt;
+        &lt;div id="feedbackUser" class="card"&gt;
+          &lt;h2&gt;管理员反馈&lt;/h2&gt;
+          &lt;div class="form-group"&gt;
+            &lt;label&gt;反馈内容&lt;/label&gt;
+            &lt;textarea id="feedbackContent" placeholder="请输入您的反馈..."&gt;&lt;/textarea&gt;
+          &lt;/div&gt;
+          &lt;button class="btn btn-success" onclick="submitFeedback()"&gt;提交反馈&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div id="feedbackAdmin" class="hidden"&gt;
+          &lt;div class="card"&gt;
+            &lt;h2&gt;管理员功能&lt;/h2&gt;
+            &lt;button class="btn" onclick="showAdminTab('publish')"&gt;发布作业&lt;/button&gt;
+            &lt;button class="btn btn-secondary" onclick="showAdminTab('editHomework')"&gt;修改作业&lt;/button&gt;
+            &lt;button class="btn btn-secondary" onclick="showAdminTab('viewFeedback')"&gt;查看反馈&lt;/button&gt;
+            &lt;button class="btn btn-secondary" onclick="showAdminTab('manageUsers')"&gt;管理账号&lt;/button&gt;
+          &lt;/div&gt;
+          &lt;div id="adminPublish" class="card"&gt;
+            &lt;h2&gt;发布作业&lt;/h2&gt;
+            &lt;div class="form-group"&gt;
+              &lt;label&gt;作业标题&lt;/label&gt;
+              &lt;input type="text" id="hwTitle" placeholder="请输入作业标题"&gt;
+            &lt;/div&gt;
+            &lt;div class="form-group"&gt;
+              &lt;label&gt;作业日期&lt;/label&gt;
+              &lt;input type="date" id="hwDate"&gt;
+            &lt;/div&gt;
+            &lt;div class="form-group"&gt;
+              &lt;label&gt;作业内容&lt;/label&gt;
+              &lt;textarea id="hwContent" placeholder="请输入作业内容..."&gt;&lt;/textarea&gt;
+            &lt;/div&gt;
+            &lt;button class="btn btn-success" onclick="publishHomework()"&gt;发布&lt;/button&gt;
+          &lt;/div&gt;
+          &lt;div id="adminEditHomework" class="card hidden"&gt;
+            &lt;h2&gt;修改作业&lt;/h2&gt;
+            &lt;div id="editHomeworkList"&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div id="adminViewFeedback" class="card hidden"&gt;
+            &lt;h2&gt;查看反馈&lt;/h2&gt;
+            &lt;div id="feedbackList"&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div id="adminManageUsers" class="card hidden"&gt;
+            &lt;h2&gt;管理账号&lt;/h2&gt;
+            &lt;div class="form-row"&gt;
+              &lt;div class="form-col"&gt;
+                &lt;label&gt;账号&lt;/label&gt;
+                &lt;input type="text" id="newUserId" placeholder="请输入账号"&gt;
+              &lt;/div&gt;
+              &lt;div class="form-col"&gt;
+                &lt;label&gt;密码&lt;/label&gt;
+                &lt;input type="text" id="newUserPassword" placeholder="请输入密码"&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class="form-group"&gt;
+              &lt;label&gt;昵称&lt;/label&gt;
+              &lt;input type="text" id="newUserNickname" placeholder="请输入昵称"&gt;
+            &lt;/div&gt;
+            &lt;div class="form-row"&gt;
+              &lt;button class="btn btn-success" onclick="addUser()"&gt;添加账号&lt;/button&gt;
+              &lt;button class="btn" onclick="showBatchAdd()"&gt;批量添加&lt;/button&gt;
+            &lt;/div&gt;
+            &lt;div id="batchAddSection" class="hidden" style="margin-top:15px;"&gt;
+              &lt;div class="form-row"&gt;
+                &lt;div class="form-col"&gt;
+                  &lt;label&gt;起始账号&lt;/label&gt;
+                  &lt;input type="number" id="batchStart" placeholder="起始"&gt;
+                &lt;/div&gt;
+                &lt;div class="form-col"&gt;
+                  &lt;label&gt;结束账号&lt;/label&gt;
+                  &lt;input type="number" id="batchEnd" placeholder="结束"&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+              &lt;button class="btn btn-success btn-sm" onclick="batchAddUsers()"&gt;批量添加&lt;/button&gt;
+            &lt;/div&gt;
+            &lt;div class="user-list" id="userList"&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div id="historySection" class="hidden"&gt;
+        &lt;div class="card"&gt;
+          &lt;h2&gt;以往作业&lt;/h2&gt;
+          &lt;div id="historyHomeworkList"&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div id="profileSection" class="hidden"&gt;
+        &lt;div class="card"&gt;
+          &lt;h2&gt;个人中心&lt;/h2&gt;
+          &lt;div class="form-group"&gt;
+            &lt;label&gt;账号（不可修改）&lt;/label&gt;
+            &lt;input type="text" id="profileId" readonly&gt;
+          &lt;/div&gt;
+          &lt;div class="form-group"&gt;
+            &lt;label&gt;昵称&lt;/label&gt;
+            &lt;input type="text" id="profileNickname" placeholder="请输入昵称"&gt;
+          &lt;/div&gt;
+          &lt;div class="form-group"&gt;
+            &lt;label&gt;新密码&lt;/label&gt;
+            &lt;input type="password" id="profileNewPassword" placeholder="不修改请留空"&gt;
+          &lt;/div&gt;
+          &lt;button class="btn btn-success" onclick="updateProfile()"&gt;保存修改&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;script&gt;
+    let currentUser = null;
+    let users = [];
+    let homework = [];
+    let feedback = [];
+
+    async function loadData() {
+      const [usersRes, hwRes, fbRes] = await Promise.all([
+        fetch('/api/users'),
+        fetch('/api/homework'),
+        fetch('/api/feedback')
+      ]);
+      users = (await usersRes.json()).users || [];
+      homework = (await hwRes.json()).homework || [];
+      feedback = (await fbRes.json()).feedback || [];
+    }
+
+    async function saveUsers() {
+      await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ users })
+      });
+    }
+
+    async function saveHomework() {
+      await fetch('/api/homework', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ homework })
+      });
+    }
+
+    async function saveFeedback() {
+      await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedback })
+      });
+    }
+
+    async function login() {
+      await loadData();
+      const id = document.getElementById('loginId').value;
+      const password = document.getElementById('loginPassword').value;
+      const user = users.find(u =&gt; u.id === id &amp;&amp; u.password === password);
+      if (user) {
+        currentUser = user;
+        document.getElementById('loginPage').classList.add('hidden');
+        document.getElementById('mainPage').classList.remove('hidden');
+        document.getElementById('currentUser').textContent = user.nickname + (user.isAdmin ? ' (管理员)' : '');
+        if (user.isAdmin) {
+          document.getElementById('feedbackMenuItem').textContent = '管理员选项';
+          document.getElementById('feedbackUser').classList.add('hidden');
+          document.getElementById('feedbackAdmin').classList.remove('hidden');
+        } else {
+          document.getElementById('feedbackMenuItem').textContent = '管理员反馈';
+          document.getElementById('feedbackUser').classList.remove('hidden');
+          document.getElementById('feedbackAdmin').classList.add('hidden');
+        }
+        await loadTodayHomework();
+        await loadHistoryHomework();
+        if (user.isAdmin) {
+          await loadFeedbackList();
+          await loadUserList();
+        }
+        loadProfile();
+      } else {
+        alert('账号或密码错误');
+      }
+    }
+
+    function logout() {
+      currentUser = null;
+      document.getElementById('mainPage').classList.add('hidden');
+      document.getElementById('loginPage').classList.remove('hidden');
+      document.getElementById('loginId').value = '';
+      document.getElementById('loginPassword').value = '';
+      toggleSidebar();
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('overlay').classList.toggle('show');
+    }
+
+    function showSection(section) {
+      ['today', 'feedback', 'history', 'profile'].forEach(s =&gt; {
+        document.getElementById(s + 'Section').classList.add('hidden');
+      });
+      document.getElementById(section + 'Section').classList.remove('hidden');
+      document.querySelectorAll('.sidebar-item').forEach(item =&gt; {
+        item.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      toggleSidebar();
+      if (section === 'today') loadTodayHomework();
+      if (section === 'history') loadHistoryHomework();
+      if (section === 'feedback' &amp;&amp; currentUser.isAdmin) {
+        loadFeedbackList();
+        loadUserList();
+      }
+      if (section === 'profile') loadProfile();
+    }
+
+    async function loadTodayHomework() {
+      await loadData();
+      const today = new Date().toISOString().split('T')[0];
+      const todayHw = homework.filter(h =&gt; h.date === today);
+      const container = document.getElementById('todayHomeworkList');
+      container.innerHTML = todayHw.length ? todayHw.map(h =&gt; `
+        &lt;div class="homework-item"&gt;
+          &lt;div class="homework-title"&gt;${h.title}&lt;/div&gt;
+          &lt;div class="homework-date"&gt;${h.date}&lt;/div&gt;
+          &lt;div class="homework-content"&gt;${h.content}&lt;/div&gt;
+        &lt;/div&gt;
+      `).join('') : '&lt;p&gt;暂无今日作业&lt;/p&gt;';
+    }
+
+    async function loadHistoryHomework() {
+      await loadData();
+      const today = new Date().toISOString().split('T')[0];
+      const historyHw = homework.filter(h =&gt; h.date &lt; today).sort((a, b) =&gt; b.date.localeCompare(a.date));
+      const container = document.getElementById('historyHomeworkList');
+      container.innerHTML = historyHw.length ? historyHw.map(h =&gt; `
+        &lt;div class="homework-item"&gt;
+          &lt;div class="homework-title"&gt;${h.title}&lt;/div&gt;
+          &lt;div class="homework-date"&gt;${h.date}&lt;/div&gt;
+          &lt;div class="homework-content"&gt;${h.content}&lt;/div&gt;
+        &lt;/div&gt;
+      `).join('') : '&lt;p&gt;暂无以往作业&lt;/p&gt;';
+    }
+
+    async function submitFeedback() {
+      const content = document.getElementById('feedbackContent').value;
+      if (!content) {
+        alert('请输入反馈内容');
+        return;
+      }
+      feedback.push({
+        id: Date.now(),
+        userId: currentUser.id,
+        userNickname: currentUser.nickname,
+        content,
+        date: new Date().toISOString().split('T')[0]
+      });
+      await saveFeedback();
+      document.getElementById('feedbackContent').value = '';
+      alert('反馈提交成功');
+    }
+
+    async function publishHomework() {
+      const title = document.getElementById('hwTitle').value;
+      const date = document.getElementById('hwDate').value;
+      const content = document.getElementById('hwContent').value;
+      if (!title || !date || !content) {
+        alert('请填写完整信息');
+        return;
+      }
+      homework.push({ id: Date.now(), title, date, content });
+      await saveHomework();
+      document.getElementById('hwTitle').value = '';
+      document.getElementById('hwDate').value = '';
+      document.getElementById('hwContent').value = '';
+      alert('作业发布成功');
+      loadTodayHomework();
+      loadHistoryHomework();
+      loadEditHomeworkList();
+    }
+
+    function showAdminTab(tab) {
+      ['publish', 'editHomework', 'viewFeedback', 'manageUsers'].forEach(t =&gt; {
+        document.getElementById('admin' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('hidden');
+      });
+      document.getElementById('admin' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.remove('hidden');
+      if (tab === 'editHomework') loadEditHomeworkList();
+      if (tab === 'viewFeedback') loadFeedbackList();
+      if (tab === 'manageUsers') loadUserList();
+    }
+
+    async function loadEditHomeworkList() {
+      await loadData();
+      const container = document.getElementById('editHomeworkList');
+      container.innerHTML = homework.map(h =&gt; `
+        &lt;div class="homework-item"&gt;
+          &lt;div class="homework-title"&gt;
+            &lt;input type="text" value="${h.title}" id="editTitle${h.id}" style="width:60%;padding:5px;"&gt;
+          &lt;/div&gt;
+          &lt;div class="homework-date"&gt;
+            &lt;input type="date" value="${h.date}" id="editDate${h.id}" style="padding:5px;"&gt;
+          &lt;/div&gt;
+          &lt;div class="homework-content"&gt;
+            &lt;textarea id="editContent${h.id}" style="width:100%;min-height:60px;"&gt;${h.content}&lt;/textarea&gt;
+          &lt;/div&gt;
+          &lt;div style="margin-top:10px;"&gt;
+            &lt;button class="btn btn-success btn-sm" onclick="updateHomework(${h.id})"&gt;保存&lt;/button&gt;
+            &lt;button class="btn btn-danger btn-sm" onclick="deleteHomework(${h.id})"&gt;删除&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      `).join('') || '&lt;p&gt;暂无作业&lt;/p&gt;';
+    }
+
+    async function updateHomework(id) {
+      const hw = homework.find(h =&gt; h.id === id);
+      if (hw) {
+        hw.title = document.getElementById('editTitle' + id).value;
+        hw.date = document.getElementById('editDate' + id).value;
+        hw.content = document.getElementById('editContent' + id).value;
+        await saveHomework();
+        alert('修改成功');
+        loadTodayHomework();
+        loadHistoryHomework();
+      }
+    }
+
+    async function deleteHomework(id) {
+      if (confirm('确定删除该作业吗？')) {
+        homework = homework.filter(h =&gt; h.id !== id);
+        await saveHomework();
+        loadEditHomeworkList();
+        loadTodayHomework();
+        loadHistoryHomework();
+      }
+    }
+
+    async function loadFeedbackList() {
+      await loadData();
+      const container = document.getElementById('feedbackList');
+      container.innerHTML = feedback.map(f =&gt; `
+        &lt;div class="feedback-item"&gt;
+          &lt;div class="feedback-info"&gt;${f.date} - ${f.userNickname} (账号: ${f.userId})&lt;/div&gt;
+          &lt;div class="homework-content"&gt;${f.content}&lt;/div&gt;
+        &lt;/div&gt;
+      `).join('') || '&lt;p&gt;暂无反馈&lt;/p&gt;';
+    }
+
+    function showBatchAdd() {
+      document.getElementById('batchAddSection').classList.toggle('hidden');
+    }
+
+    async function addUser() {
+      const id = document.getElementById('newUserId').value;
+      const password = document.getElementById('newUserPassword').value;
+      const nickname = document.getElementById('newUserNickname').value;
+      if (!id || !password) {
+        alert('请填写账号和密码');
+        return;
+      }
+      if (users.find(u =&gt; u.id === id)) {
+        alert('该账号已存在');
+        return;
+      }
+      users.push({ id, password, nickname: nickname || id, isAdmin: false });
+      await saveUsers();
+      document.getElementById('newUserId').value = '';
+      document.getElementById('newUserPassword').value = '';
+      document.getElementById('newUserNickname').value = '';
+      loadUserList();
+    }
+
+    async function batchAddUsers() {
+      const start = parseInt(document.getElementById('batchStart').value);
+      const end = parseInt(document.getElementById('batchEnd').value);
+      if (isNaN(start) || isNaN(end) || start &gt; end) {
+        alert('请输入有效的范围');
+        return;
+      }
+      for (let i = start; i &lt;= end; i++) {
+        const id = i.toString();
+        if (!users.find(u =&gt; u.id === id)) {
+          users.push({ id, password: id, nickname: '学生' + id, isAdmin: false });
+        }
+      }
+      await saveUsers();
+      loadUserList();
+    }
+
+    async function loadUserList() {
+      await loadData();
+      const container = document.getElementById('userList');
+      container.innerHTML = users.map(u =&gt; `
+        &lt;div class="user-item"&gt;
+          &lt;span&gt;${u.nickname} (${u.id})${u.isAdmin ? ' - 管理员' : ''}&lt;/span&gt;
+          &lt;button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')" ${u.id === 'shareuser' ? 'disabled' : ''}&gt;删除&lt;/button&gt;
+        &lt;/div&gt;
+      `).join('');
+    }
+
+    async function deleteUser(id) {
+      if (id === 'shareuser') return;
+      if (confirm('确定删除该账号吗？')) {
+        users = users.filter(u =&gt; u.id !== id);
+        await saveUsers();
+        loadUserList();
+      }
+    }
+
+    function loadProfile() {
+      document.getElementById('profileId').value = currentUser.id;
+      document.getElementById('profileNickname').value = currentUser.nickname;
+      document.getElementById('profileNewPassword').value = '';
+    }
+
+    async function updateProfile() {
+      const nickname = document.getElementById('profileNickname').value;
+      const newPassword = document.getElementById('profileNewPassword').value;
+      const user = users.find(u =&gt; u.id === currentUser.id);
+      if (user) {
+        user.nickname = nickname;
+        if (newPassword) {
+          user.password = newPassword;
+        }
+        currentUser = user;
+        await saveUsers();
+        document.getElementById('currentUser').textContent = user.nickname + (user.isAdmin ? ' (管理员)' : '');
+        alert('修改成功');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () =&gt; {
+      document.getElementById('hwDate').valueAsDate = new Date();
+    });
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
